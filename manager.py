@@ -1,6 +1,8 @@
 from datetime import datetime
 import json
 from typing import Dict, Any
+from concurrent.futures import ThreadPoolExecutor
+
 from web_scraper_base import logger
 from quote_scraper import QuoteScraper
 from book_scraper import BookScraper
@@ -31,20 +33,28 @@ class MultiSiteScraperManager:
         logger.info("Starting multi-site web scraping session")
         logger.info("=" * 50)
 
-        # Scrape quotes
-        logger.info("\nScraping Quotes...")
+        # Initialize scrapers
         quote_scraper = QuoteScraper()
-        self.results['data']['quotes'] = quote_scraper.scrape_quotes(pages=num_pages)
-
-        # Scrape books
-        logger.info("\nScraping Books...")
         book_scraper = BookScraper()
-        self.results['data']['books'] = book_scraper.scrape_books(pages=num_pages)
-
-        # Scrape hockey stats
-        logger.info("\nScraping Hockey Statistics...")
         hockey_scraper = ScrapesiteScraper()
-        self.results['data']['hockey_teams'] = hockey_scraper.scrape_hockey_stats(pages=num_pages)
+
+        # Run scrapers in parallel using threads (I/O-bound)
+        logger.info("\nLaunching scrapers in parallel...")
+        with ThreadPoolExecutor(max_workers=3) as ex:
+            future_to_key = {
+                ex.submit(quote_scraper.scrape_quotes, num_pages): 'quotes',
+                ex.submit(book_scraper.scrape_books, num_pages): 'books',
+                ex.submit(hockey_scraper.scrape_hockey_stats, num_pages): 'hockey_teams'
+            }
+
+            for fut, key in future_to_key.items():
+                try:
+                    result = fut.result()
+                except Exception as e:
+                    logger.error(f"Error running scraper for {key}: {e}")
+                    self.results['data'][key] = []
+                else:
+                    self.results['data'][key] = result
 
         logger.info("\n" + "=" * 50)
         logger.info("Scraping session completed")
