@@ -37,6 +37,7 @@ class MultiSiteScraperManager:
         quote_scraper = QuoteScraper()
         book_scraper = BookScraper()
         hockey_scraper = ScrapesiteScraper()
+        # gold_scraper = GoldScraper()
 
         # Run scrapers in parallel using threads (I/O-bound)
         logger.info("\nLaunching scrapers in parallel...")
