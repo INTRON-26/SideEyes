@@ -1,2 +1,5 @@
 requests>=2.28.0
 beautifulsoup4>=4.11.0
+Flask>=2.3.0
+Werkzeug>=2.3.0
+Flasgger>=0.9.7
