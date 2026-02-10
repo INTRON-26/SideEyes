@@ -3,7 +3,6 @@
 import json
 import os
 from flask import Flask, jsonify, request
-from datetime import datetime
 from flasgger import Swagger
 from manager import MultiSiteScraperManager
 from quote_scraper import QuoteScraper
@@ -27,7 +26,7 @@ def load_scraped_data():
     """Load scraped data from JSON file."""
     if not os.path.exists(DATA_FILE):
         return {'error': 'No scraped data available'}, 404
-    
+
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -82,7 +81,7 @@ def get_quotes():
     data = load_scraped_data()
     if isinstance(data, tuple):  # Error case
         return jsonify(data[0]), data[1]
-    
+
     quotes = data.get('data', {}).get('quotes', [])
     return jsonify({
         'timestamp': data.get('timestamp'),
@@ -114,7 +113,7 @@ def get_books():
     data = load_scraped_data()
     if isinstance(data, tuple):  # Error case
         return jsonify(data[0]), data[1]
-    
+
     books = data.get('data', {}).get('books', [])
     return jsonify({
         'timestamp': data.get('timestamp'),
@@ -146,7 +145,7 @@ def get_hockey_stats():
     data = load_scraped_data()
     if isinstance(data, tuple):  # Error case
         return jsonify(data[0]), data[1]
-    
+
     hockey_teams = data.get('data', {}).get('hockey_teams', [])
     return jsonify({
         'timestamp': data.get('timestamp'),
@@ -176,15 +175,15 @@ def get_data_by_type(data_type):
     data = load_scraped_data()
     if isinstance(data, tuple):  # Error case
         return jsonify(data[0]), data[1]
-    
+
     available_data = data.get('data', {})
-    
+
     if data_type not in available_data:
         return jsonify({
             'error': f'Data type "{data_type}" not found',
             'available_types': list(available_data.keys())
         }), 404
-    
+
     items = available_data.get(data_type, [])
     return jsonify({
         'timestamp': data.get('timestamp'),
@@ -224,11 +223,11 @@ def get_status():
             'message': 'No scraped data available',
             'file': DATA_FILE
         }), 404
-    
+
     data = load_scraped_data()
     if isinstance(data, tuple):  # Error case
         return jsonify(data[0]), data[1]
-    
+
     system_data = data.get('data', {})
     return jsonify({
         'status': 'ok',
@@ -242,7 +241,7 @@ def get_status():
             '/api/data/<type>': 'Get specific data type',
             '/api/status': 'Get API status'
         },
-        'data_summary': {key: len(value) if isinstance(value, list) else 1 
+        'data_summary': {key: len(value) if isinstance(value, list) else 1
                         for key, value in system_data.items()}
     })
 
@@ -299,19 +298,19 @@ def scrape_all():
         pages = request.args.get('pages', 1, type=int)
         if pages < 1:
             return jsonify({'error': 'pages must be greater than 0'}), 400
-        
+
         manager = MultiSiteScraperManager()
         results = manager.run_all_scrapers(num_pages=pages)
         manager.save_results(DATA_FILE)
-        
+
         return jsonify({
             'status': 'success',
             'message': f'Successfully scraped {pages} page(s) from all sources',
             'timestamp': results.get('timestamp'),
-            'data_summary': {key: len(value) if isinstance(value, list) else 1 
+            'data_summary': {key: len(value) if isinstance(value, list) else 1
                            for key, value in results.get('data', {}).items()}
         }), 200
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return jsonify({
             'status': 'error',
             'message': f'Scraping failed: {str(e)}'
@@ -339,10 +338,10 @@ def scrape_quotes():
         pages = request.args.get('pages', 1, type=int)
         if pages < 1:
             return jsonify({'error': 'pages must be greater than 0'}), 400
-        
+
         scraper = QuoteScraper()
         quotes = scraper.scrape_quotes(pages=pages)
-        
+
         # Load existing data and update
         data = load_scraped_data()
         if not isinstance(data, tuple):
@@ -352,14 +351,14 @@ def scrape_quotes():
                     json.dump(data, f, indent=2, ensure_ascii=False)
             except IOError:
                 pass
-        
+
         return jsonify({
             'status': 'success',
             'message': f'Successfully scraped {len(quotes)} quotes from {pages} page(s)',
             'count': len(quotes),
             'quotes': quotes
         }), 200
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return jsonify({
             'status': 'error',
             'message': f'Scraping failed: {str(e)}'
@@ -387,10 +386,10 @@ def scrape_books():
         pages = request.args.get('pages', 1, type=int)
         if pages < 1:
             return jsonify({'error': 'pages must be greater than 0'}), 400
-        
+
         scraper = BookScraper()
         books = scraper.scrape_books(pages=pages)
-        
+
         # Load existing data and update
         data = load_scraped_data()
         if not isinstance(data, tuple):
@@ -400,14 +399,14 @@ def scrape_books():
                     json.dump(data, f, indent=2, ensure_ascii=False)
             except IOError:
                 pass
-        
+
         return jsonify({
             'status': 'success',
             'message': f'Successfully scraped {len(books)} books from {pages} page(s)',
             'count': len(books),
             'books': books
         }), 200
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return jsonify({
             'status': 'error',
             'message': f'Scraping failed: {str(e)}'
@@ -435,10 +434,10 @@ def scrape_hockey():
         pages = request.args.get('pages', 1, type=int)
         if pages < 1:
             return jsonify({'error': 'pages must be greater than 0'}), 400
-        
+
         scraper = ScrapesiteScraper()
         stats = scraper.scrape_hockey_stats(pages=pages)
-        
+
         # Load existing data and update
         data = load_scraped_data()
         if not isinstance(data, tuple):
@@ -448,14 +447,14 @@ def scrape_hockey():
                     json.dump(data, f, indent=2, ensure_ascii=False)
             except IOError:
                 pass
-        
+
         return jsonify({
             'status': 'success',
             'message': f'Successfully scraped {len(stats)} records from {pages} page(s)',
             'count': len(stats),
             'hockey_teams': stats
         }), 200
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return jsonify({
             'status': 'error',
             'message': f'Scraping failed: {str(e)}'
@@ -463,7 +462,7 @@ def scrape_hockey():
 
 
 @app.errorhandler(404)
-def not_found(error):
+def not_found(_error):
     """Handle 404 errors."""
     return jsonify({
         'error': 'Endpoint not found',
@@ -472,11 +471,11 @@ def not_found(error):
 
 
 @app.errorhandler(500)
-def internal_error(error):
+def internal_error(_error):
     """Handle 500 errors."""
     return jsonify({
         'error': 'Internal server error',
-        'message': str(error)
+        'message': 'An error occurred'
     }), 500
 
 
