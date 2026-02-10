@@ -3,3 +3,7 @@ beautifulsoup4>=4.11.0
 Flask>=2.3.0
 Werkzeug>=2.3.0
 Flasgger>=0.9.7
+gunicorn>=21.0.0
+Flask>=2.3.0
+Werkzeug>=2.3.0
+Flasgger>=0.9.7

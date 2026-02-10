@@ -1,0 +1,33 @@
+name: Deploy API to Render
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render
+        run: |
+          curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+        if: secrets.RENDER_DEPLOY_HOOK != ''
+
+      - name: Deployment Status
+        if: success()
+        run: |
+          echo "✅ API deployment to Render successful!"
+          echo "Your API is now live on Render"
+
+      - name: Deployment Failed
+        if: failure()
+        run: |
+          echo "❌ Deployment failed. Check your RENDER_DEPLOY_HOOK secret."
+          exit 1
+
+
