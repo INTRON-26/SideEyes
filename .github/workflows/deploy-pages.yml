@@ -15,8 +15,10 @@ jobs:
 
       - name: Deploy to Render
         run: |
-          curl ${{ secrets.RENDER_DEPLOY_HOOK }}
-        if: secrets.RENDER_DEPLOY_HOOK != ''
+          curl $RENDER_DEPLOY_HOOK
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        if: env.RENDER_DEPLOY_HOOK != ''
 
       - name: Deployment Status
         if: success()
