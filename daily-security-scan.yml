@@ -1,0 +1,62 @@
+name: Daily Security Scan
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs at 00:00 UTC every day
+  workflow_dispatch: # Allows manual triggering from the Actions tab
+
+permissions:
+  contents: write # Required to push the report to the branch
+
+jobs:
+  vulnerability-scan:
+    name: Scan and Report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history so we can switch branches easily
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          output: 'trivy-report.txt'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0' # Ensure the job continues so we can upload the report
+
+      - name: Push Report to Security Branch
+        run: |
+          # Configuration
+          REPORT_BRANCH="security-reports"
+          REPORT_FILE="trivy-report.txt"
+          DATE_TAG=$(date +'%Y-%m-%d')
+          DEST_FILE="vulnerability-report-${DATE_TAG}.txt"
+
+          # Configure Git Identity
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Move report to temporary location to survive branch checkout
+          mv "$REPORT_FILE" "/tmp/$DEST_FILE"
+
+          # Switch to report branch (create orphan if it doesn't exist)
+          # We check remote refs because local refs might not be fully updated
+          if git ls-remote --exit-code --heads origin "$REPORT_BRANCH"; then
+            git checkout "$REPORT_BRANCH"
+            git pull origin "$REPORT_BRANCH"
+          else
+            git checkout --orphan "$REPORT_BRANCH"
+            git rm -rf .
+          fi
+
+          # Move report back into the repo folder
+          mv "/tmp/$DEST_FILE" "./$DEST_FILE"
+
+          # Commit and push
+          git add "$DEST_FILE"
+          git commit -m "Security report for $DATE_TAG"
+          git push origin "$REPORT_BRANCH"
