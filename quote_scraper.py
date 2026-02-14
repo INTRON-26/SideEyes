@@ -41,7 +41,9 @@ class QuoteScraper(WebScraper):
             for quote_div in quote_divs:
                 try:
                     text = quote_div.find('span', class_='text').get_text()[1:-1]  # Remove quotes
-                    author = quote_div.find('small', class_='author').get_text()[3:]  # Remove "by "
+                    author_text = quote_div.find('small', class_='author').get_text()
+                    # Remove "by " prefix more robustly
+                    author = author_text.replace('by ', '', 1).strip() if 'by ' in author_text else author_text.strip()
                     tags = [tag.get_text() for tag in quote_div.find_all('a', class_='tag')]
 
                     quotes.append({

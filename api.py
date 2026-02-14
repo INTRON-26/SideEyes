@@ -3,6 +3,7 @@
 import json
 import os
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flasgger import Swagger
 from manager import MultiSiteScraperManager
 from quote_scraper import QuoteScraper
@@ -10,6 +11,7 @@ from book_scraper import BookScraper
 from scrapethissite_scraper import ScrapesiteScraper
 
 app = Flask(__name__)
+CORS(app)
 swagger = Swagger(app, template={
     'swagger': '2.0',
     'info': {
